@@ -9,7 +9,6 @@ Rendimiento del capital mobiliario a integrar en la base imponible del ahorro
 
 """
 
-import numpy as np
 import pandas as pd
 
 def read_csv_to_dataframe(file_path):
@@ -113,8 +112,7 @@ def order_by_date(dataframe, column_name_date):
         DESCRIPTION.
 
     """
-    dataframe[column_name_date] = pd.to_datetime(dataframe[column_name_date], 
-                                               format='%d-%m-%Y')
+    dataframe[column_name_date] = pd.to_datetime(dataframe[column_name_date], format='%d-%m-%Y')
     dataframe = dataframe.sort_values(by=column_name_date, ascending=False)
     dataframe.reset_index(drop=True, inplace=True)
     return dataframe
@@ -139,6 +137,21 @@ def get_money_countries(dataframe):
     return coins
 
 def organize_foreigner_money(dataframe, order):
+    """
+    
+    Parameters
+    ----------
+    dataframe : TYPE
+        DESCRIPTION.
+    order : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    dataframe : TYPE
+        DESCRIPTION.
+
+    """
     index = 0
     while index < len(dataframe):
         row = dataframe.iloc[index]
@@ -267,12 +280,13 @@ def main():
     values_pattern = ["Retirada Cambio de Divisa", "Dividendo", "Retención del dividendo"]
     rawEstadoCuenta = read_csv_to_dataframe("D:\Bolsa Py\estadoCuenta.csv")
     
-    estadoCuenta = get_year_data(rawEstadoCuenta, 2023)
+    estadoCuenta = get_year_data(rawEstadoCuenta, 2024)
     estadoCuenta = clean_dataframe(estadoCuenta)
     estadoFiltro = filtro_by_expecific_column(estadoCuenta, "Descripción", values_pattern)
     coins_bought = get_money_countries(estadoFiltro)
     estadoFiltro_ordenado = order_by_date(estadoFiltro, "Fecha valor")
     finalOrganization = organize_foreigner_money(estadoFiltro_ordenado, values_pattern)
+
     fillMoneyGaps = fill_money_gaps(finalOrganization, values_pattern)
     deleteRCD = delete_RCD(fillMoneyGaps, values_pattern[1:])
     addColumns = add_columns_and_fill(deleteRCD)

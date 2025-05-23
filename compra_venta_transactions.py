@@ -431,19 +431,56 @@ def process_all_transactions(stockSoldName, my_transactions, year):
         process_transaction(my_transactions[stockName], year)
 
 def calculate_taxes_per_stock(stockName, my_transaction):
+    """
+    Llega el my_transaction con todo el conjunto de los años. Si machea las compras y ventas
+    directamente se puede calcualar. Sino hay que ir a buscar las acciones para cumplir la
+    regla FIFO.
+
+    Parameters
+    ----------
+    stockName : TYPE
+        DESCRIPTION.
+    my_transaction : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    """
+    SoldStock = Decimal('0.0')
+    BoughtStock = Decimal('0.0')
     stocks = my_transaction["Número"].sum()
-    if stocks == 0:
+    if stocks == 0: # se vende todo el bloque y no quedan acciones restantes
+        for index, row in my_transaction.iterrows():
+            if row["Número"] < 0:
+                SoldStock += row["Total"]
+            elif row["Número"] > 0:
+                BoughtStock += row["Total"]
+            else:
+                print("Error!")
+                
         print(stockName, "=", my_transaction["Total"].sum())
+        print("Valor de transmisión = ", SoldStock)
+        # -1 * BoughtStocks para que salga positivo que es como se tiene que poner en hacienda
+        print("Valor de adquisición = ", -1*BoughtStock, "\n") 
+                
     else:
+        # suma todas las acciones vendidas 
         totalStocksSold = my_transaction["Número"].apply(lambda x: x if x < 0 else 0).sum()
-        moneyEarned = my_transaction["Total"].apply(lambda x: x if x > 0 else 0).sum()
+        # igual que antes pero para saber el dinero ganado. Equivalente a valor de transmisión
+        totalMoneyEarned = my_transaction["Total"].apply(lambda x: x if x > 0 else 0).sum()
+        moneyEarned = totalMoneyEarned
+        
         for index, row in my_transaction.iloc[::-1].iterrows(): # recorrer del revés
             if row["Número"] + totalStocksSold < 0: # consumo todo el bloque de acciones compradas 
-                moneyEarned += row["Total"]
+                moneyEarned += row["Total"] # almacena las compras correspondiente a valor de adquisición
                 totalStocksSold += row["Número"]
             else:
                 moneyEarned += totalStocksSold*row["Precio"] + row["Costes de transacción"] # los costes de transacción se ponen en hacienda del tirón. El resto de años no se amortizan
                 print(stockName, "=", moneyEarned)
+                print("Valor de transmisión = ", totalMoneyEarned)
+                print("Valor de adquisición = ", totalMoneyEarned-moneyEarned, "\n")
                 break
             
 def calculate_all_taxes(stockSoldName, my_transactions):
